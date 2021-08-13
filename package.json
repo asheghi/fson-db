@@ -1,0 +1,23 @@
+{
+  "name": "fson",
+  "version": "1.0.0",
+  "description": "",
+  "main": "fson.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/semycolon/fson.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/semycolon/fson/issues"
+  },
+  "homepage": "https://github.com/semycolon/fson#readme"
+}
