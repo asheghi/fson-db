@@ -1,7 +1,7 @@
 fson-db
 ====
 
-is A Super Simple Database, fson-db save data in json format in localStorage for browsers or fs
+SUPER SIMPLE Database for javascript, it save data in json format in localStorage for browsers or fs
 for node-js.
 
 note: browser support will be added very soon.
