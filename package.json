@@ -1,8 +1,8 @@
 {
-  "name": "fson",
-  "version": "1.0.0",
+  "name": "fson-db",
+  "version": "0.0.1",
   "description": "",
-  "main": "fson.js",
+  "main": "index.js",
   "directories": {
     "lib": "lib"
   },
