@@ -1,7 +1,7 @@
 {
   "name": "fson-db",
-  "version": "0.0.3",
-  "description": "",
+  "version": "0.0.4",
+  "description": "SUPER SIMPLE Database for javascript",
   "main": "index.js",
   "directories": {
     "lib": "lib"
