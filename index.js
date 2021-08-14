@@ -111,7 +111,6 @@ module.exports = function (storagePath) {
                     mainNp = new Proxy(target, nestedHandler(null, value, mainNp));
                     return mainNp;
                 }
-
                 return value;
             } catch (e) {
                 console.error(e);
