@@ -91,7 +91,7 @@ db.foo = {
     }
 };
 
-assert.deepStrictEqual(db.foo['bar.baz'], 1);
-assert.deepStrictEqual(db.foo.bar.baz, 2);
+assert.strictEqual(db.foo['bar.baz'], 1);
+assert.strictEqual(db.foo.bar.baz, 2);
 
 //todo db.a.b.c.d[3].id = 5

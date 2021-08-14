@@ -4,9 +4,11 @@ fson-db
 SUPER SIMPLE Database for javascript, it save data in json format in localStorage for browsers or fs
 for node-js.
 
-note: browser support will be added very soon.
+note: 
 
-note: the following apis are supported, full js object apis will be added soon! 
+- browser support will be added very soon.
+- performance is not a priority for now, everything is synchronous, so use `db` inside `async` functions
+- the following apis are supported, full js object apis will be added soon!
 
 
 Example Usage:
