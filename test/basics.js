@@ -82,6 +82,16 @@ assert.deepStrictEqual(db.a.b.c.d[0], {id: 1});
 
 db.a.b.c.d[3] = {id: 5};
 
-assert.deepStrictEqual(db.a.b.c.d[3],{id:5});
+assert.deepStrictEqual(db.a.b.c.d[3], {id: 5});
+
+db.foo = {
+    'bar.baz': 1,
+    bar: {
+        baz: 2,
+    }
+};
+
+assert.deepStrictEqual(db.foo['bar.baz'], 1);
+assert.deepStrictEqual(db.foo.bar.baz, 2);
 
 //todo db.a.b.c.d[3].id = 5

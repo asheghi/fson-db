@@ -52,8 +52,8 @@ module.exports = function (storagePath) {
                                     return (...pushArg) => {
                                         let path = arg;
                                         let prePushJsonValue = localStorage.getItem(name);
-                                        if (path && path.indexOf('.') > -1) {
-                                            const sections = path.split('.');
+                                        if (path.length) {
+                                            const sections = path;
                                             let temp = prePushJsonValue;
                                             for (let i = 0; i < sections.length - 1; i++) {
                                                 let section = sections[i];
@@ -75,7 +75,7 @@ module.exports = function (storagePath) {
                                 return t[n];
                             }
 
-                            let path = arg ? arg + '.' + n : n;
+                            let path = [...arg,n];
                             let val = byString(value, path);
                             if (typeof val === "object") {
                                 if(val === null){
@@ -83,7 +83,7 @@ module.exports = function (storagePath) {
                                 }
                                 let nestedProxy = undefined;
                                 let target = val;
-                                nestedProxy = new Proxy(target, nestedHandler(arg ? arg + '.' + n : n, parentObject, nestedProxy))
+                                nestedProxy = new Proxy(target, nestedHandler([...arg,n], parentObject, nestedProxy))
                                 return nestedProxy;
                             }
 
@@ -91,9 +91,9 @@ module.exports = function (storagePath) {
                         },
                         set(t, n, v) {
                             let obj = localStorage.getItem(name);
-                            let path = arg ? arg + '.' + n : n;
-                            if (path.indexOf('.') > -1) {
-                                const sections = path.split('.');
+                            let path = [...arg,n];
+                            if (path.length) {
+                                const sections = path;
                                 let temp = obj;
                                 for (let i = 0; i < sections.length - 1; i++) {
                                     let section = sections[i];
@@ -108,7 +108,7 @@ module.exports = function (storagePath) {
                         }
                     })
                     let target = value;
-                    mainNp = new Proxy(target, nestedHandler(null, value, mainNp));
+                    mainNp = new Proxy(target, nestedHandler([], value, mainNp));
                     return mainNp;
                 }
                 return value;
