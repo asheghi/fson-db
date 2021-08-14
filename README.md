@@ -1,9 +1,10 @@
 fson-db
 ====
-fson-db (`fs json db`) 
 
 is A Super Simple Database, fson-db save data in json format in localStorage for browsers or fs
 for node-js.
+
+note: browser support will be added very soon.
 
 note: the following apis are supported, full js object apis will be added soon! 
 
@@ -13,8 +14,11 @@ Example Usage:
 ```javascript
 const Fson = require('fson-db');
 
+//specify a directory path
+const dbPath = './config';
+
 //db is a js object! but any changes to in will be persistent!
-const db = Fson('./config');
+const db = Fson(dbPath);
 
 //save any type of literals
 db.name = 'john doe';
@@ -53,7 +57,7 @@ db.numbers = db.numbers.filter(i => i % 2 == 0);
 console.log(db.numbers); // [ 2, 4, 6 ]
 
 //push to arrays
-db.numbers.push(8, 10 , 12);
+db.numbers.push(8, 10, 12);
 console.log(db.numbers); // [ 2, 4, 6, 8, 9, 10 ]
 
 //save array of objects
@@ -62,7 +66,7 @@ console.log(db.users[0].id); // 1
 console.log(db.users.length); // 2
 
 //modify with indexes!
-db.users[1] = {id:3}
+db.users[1] = {id: 3}
 console.log(db.users[1].id); // 3
 
 
