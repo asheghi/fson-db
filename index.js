@@ -31,7 +31,7 @@ module.exports = function (storagePath) {
         }
     }
 
-    localStorage = createLocalStorage(path.resolve(storagePath));
+    const localStorage = createLocalStorage(path.resolve(storagePath));
     const mainHandler = {
         get(target, name, receiver) {
             try {
