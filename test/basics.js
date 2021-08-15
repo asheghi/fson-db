@@ -94,4 +94,10 @@ db.foo = {
 assert.strictEqual(db.foo['bar.baz'], 1);
 assert.strictEqual(db.foo.bar.baz, 2);
 
-//todo db.a.b.c.d[3].id = 5
+db.arr = [{id: 1}, {id: 2}, {id: 3}]
+
+assert.strictEqual(db.arr[0].id,1);
+db.arr[0].id = 2
+assert.strictEqual(db.arr[0].id,2);
+
+

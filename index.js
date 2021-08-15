@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {shallowEqual} = require("./lib/utils");
-const {byString} = require("./lib/utils");
+const {getNested} = require("./lib/utils");
 
 function createLocalStorage(storagePath) {
     return {
@@ -68,22 +67,28 @@ module.exports = function (storagePath) {
                                         return true;
                                     }
                                 }
-                                return t[n];
+
+                                if(typeof t[n] !== 'object'){
+                                    return t[n];
+                                }
+                                let nestedArrayProxy;
+                                nestedArrayProxy = new Proxy(t[n], nestedHandler([...arg, n], parentObject, nestedArrayProxy));
+                                return nestedArrayProxy;
                             }
 
                             if (typeof n !== 'string') {
                                 return t[n];
                             }
 
-                            let path = [...arg,n];
-                            let val = byString(value, path);
+                            let path = [...arg, n];
+                            let val = getNested(value, path);
                             if (typeof val === "object") {
-                                if(val === null){
+                                if (val === null) {
                                     return null;
                                 }
                                 let nestedProxy = undefined;
                                 let target = val;
-                                nestedProxy = new Proxy(target, nestedHandler([...arg,n], parentObject, nestedProxy))
+                                nestedProxy = new Proxy(target, nestedHandler([...arg, n], parentObject, nestedProxy))
                                 return nestedProxy;
                             }
 
@@ -91,7 +96,7 @@ module.exports = function (storagePath) {
                         },
                         set(t, n, v) {
                             let obj = localStorage.getItem(name);
-                            let path = [...arg,n];
+                            let path = [...arg, n];
                             if (path.length) {
                                 const sections = path;
                                 let temp = obj;
