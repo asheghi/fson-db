@@ -1,26 +1,26 @@
 fson-db
 ====
 
-SUPER SIMPLE Database for javascript, it save data in json format in localStorage for browsers or fs
-for node-js.
+Super Simple Database for Node.js and Browser
 
-note: 
+`fson-db` stores data with `json` format in localStorage for browsers and fs for node-js.
 
-- browser support will be added very soon.
-- performance is not a priority for now, everything is synchronous, so use `db` inside `async` functions
-- the following apis are supported, full js object apis will be added soon!
-
+the following apis are supported, full js object apis support is in progress
 
 Example Usage:
 
 ```javascript
+//browser
+import Fson from 'fson-db';
+
+//Node.js
 const Fson = require('fson-db');
 
 //specify a directory path
 const dbPath = './config';
 
 //db is a js object! but any changes to in will be persistent!
-const db = Fson(dbPath);
+const db = Fson(dbPath); //dbPath is only required for Node.js
 
 //save any type of literals
 db.name = 'john doe';
@@ -74,3 +74,5 @@ console.log(db.users[1].id); // 3
 
 ```
 
+
+Note: high performance is not a priority for now, everything is synchronous, so use `db` inside `async` functions

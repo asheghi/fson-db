@@ -1,4 +1,4 @@
 /test/.config/
 node_modules
-dist
 yarn.lock
+

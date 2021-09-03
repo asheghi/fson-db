@@ -1,37 +1,60 @@
-const fs = require('fs');
-const path = require('path');
-const {getNested} = require("./lib/utils");
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+const isNode = typeof process !== 'undefined'
+    && process.versions != null
+    && process.versions.node != null;
+
 
 function createLocalStorage(storagePath) {
-    return {
-        getItem(name) {
-            const jsonPath = path.join(storagePath, name);
-            try {
-                const string = fs.readFileSync(jsonPath, {encoding: 'utf8'});
-                return JSON.parse(string);
-            } catch (e) {
-                return undefined;
+    if (isBrowser) {
+        return {
+            getItem(name) {
+                try {
+                    const string = localStorage.getItem(name);
+                    return JSON.parse(string);
+                } catch (e) {
+                    return undefined;
+                }
+            },
+            setItem(name, value) {
+                localStorage.setItem(name, JSON.stringify(value));
             }
-        },
-        setItem(name, value) {
-            const jsonPath = path.join(storagePath, name);
-            fs.writeFileSync(jsonPath, JSON.stringify(value));
         }
-    };
+    }else if (isNode) {
+        const fs = require('fs');
+        const path = require('path');
+        storagePath = path.resolve(storagePath);
+        try {
+            fs.statSync(path.resolve(storagePath));
+        } catch (e) {
+            try {
+                fs.mkdirSync(path.resolve(storagePath), {recursive: true})
+            } catch (ignored) {
+                throw new Error('Bad Argument: path does not exists! check:' + storagePath);
+            }
+        }
+        const nodeLocalStorage = {
+            getItem(name) {
+                const jsonPath = path.join(storagePath, name);
+                try {
+                    const string = fs.readFileSync(jsonPath, {encoding: 'utf8'});
+                    return JSON.parse(string);
+                } catch (e) {
+                    return undefined;
+                }
+            },
+            setItem(name, value) {
+                const jsonPath = path.join(storagePath, name);
+                fs.writeFileSync(jsonPath, JSON.stringify(value));
+            }
+        };
+        return nodeLocalStorage;
+    }else{
+        throw new Error('unsupported environment');
+    }
 }
 
-module.exports = function (storagePath) {
-    try {
-        fs.statSync(path.resolve(storagePath));
-    } catch (e) {
-        try {
-            fs.mkdirSync(path.resolve(storagePath), {recursive: true})
-        } catch (ignored) {
-            throw new Error('Bad Argument: path does not exists! check:' + storagePath);
-        }
-    }
-
-    const localStorage = createLocalStorage(path.resolve(storagePath));
+function FSON(storagePath) {
+    const localStorage = createLocalStorage(storagePath);
     const mainHandler = {
         get(target, name, receiver) {
             try {
@@ -68,7 +91,7 @@ module.exports = function (storagePath) {
                                     }
                                 }
 
-                                if(typeof t[n] !== 'object'){
+                                if (typeof t[n] !== 'object') {
                                     return t[n];
                                 }
                                 let nestedArrayProxy;
@@ -131,3 +154,22 @@ module.exports = function (storagePath) {
 
     return new Proxy({}, mainHandler);
 };
+
+function getNested(obj, pathArray) {
+    if(obj === null){
+        return null;
+    }
+
+    let a = pathArray;
+    for (let i = 0, n = a.length; i < n; ++i) {
+        const k = a[i];
+        if (k in obj) {
+            obj = obj[k];
+        } else {
+            return;
+        }
+    }
+    return obj;
+}
+
+export default FSON;

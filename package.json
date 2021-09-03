@@ -1,23 +1,38 @@
 {
   "name": "fson-db",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "description": "SUPER SIMPLE Database for javascript",
-  "main": "index.js",
+  "main": "dist/fson_db.cjs.js",
+  "module": "dist/fson_db.esm.js",
   "directories": {
     "lib": "lib"
   },
   "scripts": {
+    "build": "rimraf ./dist && rollup -c rollup.config.js",
     "test": "node test/basics.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/semycolon/fson.git"
   },
-  "keywords": ["javascript","database","config","db","json","fs","localStorage"],
+  "keywords": [
+    "javascript",
+    "database",
+    "config",
+    "db",
+    "json",
+    "fs",
+    "localStorage"
+  ],
   "author": "Seyyed Abol Hassan Asheghi",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/semycolon/fson/issues"
   },
-  "homepage": "https://github.com/semycolon/fson#readme"
+  "homepage": "https://github.com/semycolon/fson#readme",
+  "devDependencies": {
+    "rimraf": "^3.0.2",
+    "rollup": "^2.56.3",
+    "rollup-plugin-terser": "^7.0.2"
+  }
 }

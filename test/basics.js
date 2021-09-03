@@ -1,4 +1,4 @@
-const JSON_DB = require('../');
+const JSON_DB = require('../dist/fson_db');
 
 const db = JSON_DB('.config');
 const assert = require('assert');
@@ -101,3 +101,4 @@ db.arr[0].id = 2
 assert.strictEqual(db.arr[0].id,2);
 
 
+console.log('passed all tests!');
