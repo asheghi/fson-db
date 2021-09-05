@@ -17,9 +17,12 @@ function createLocalStorage(storagePath) {
             },
             setItem(name, value) {
                 localStorage.setItem(name, JSON.stringify(value));
+            },
+            keys() {
+                return Object.keys(localStorage);
             }
         }
-    }else if (isNode) {
+    } else if (isNode) {
         const fs = require('fs');
         const path = require('path');
         storagePath = path.resolve(storagePath);
@@ -45,10 +48,13 @@ function createLocalStorage(storagePath) {
             setItem(name, value) {
                 const jsonPath = path.join(storagePath, name);
                 fs.writeFileSync(jsonPath, JSON.stringify(value));
+            },
+            keys() {
+                return fs.readdirSync(storagePath)
             }
         };
         return nodeLocalStorage;
-    }else{
+    } else {
         throw new Error('unsupported environment');
     }
 }
@@ -56,6 +62,12 @@ function createLocalStorage(storagePath) {
 function FSON(storagePath) {
     const localStorage = createLocalStorage(storagePath);
     const mainHandler = {
+        ownKeys: function () {
+            return localStorage.keys();
+        },
+        getOwnPropertyDescriptor(target, prop) {
+            return {configurable: true, enumerable: true, value: null};
+        },
         get(target, name, receiver) {
             try {
                 let value = localStorage.getItem(name);
@@ -156,7 +168,7 @@ function FSON(storagePath) {
 };
 
 function getNested(obj, pathArray) {
-    if(obj === null){
+    if (obj === null) {
         return null;
     }
 
@@ -172,4 +184,4 @@ function getNested(obj, pathArray) {
     return obj;
 }
 
-export default FSON;
+module.exports = FSON;
