@@ -20,6 +20,13 @@ function createLocalStorage(storagePath) {
             },
             keys() {
                 return Object.keys(localStorage);
+            },
+            removeItem(key){
+                try {
+                    localStorage.removeItem(key)
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
     } else if (isNode) {
@@ -51,6 +58,14 @@ function createLocalStorage(storagePath) {
             },
             keys() {
                 return fs.readdirSync(storagePath)
+            },
+            removeItem(name){
+                const jsonPath = path.join(storagePath, name);
+                try {
+                    fs.unlinkSync(jsonPath);
+                } catch (e) {
+                    console.error(e);
+                }
             }
         };
         return nodeLocalStorage;
@@ -145,6 +160,24 @@ function FSON(storagePath) {
                                 obj[n] = v;
                             }
                             localStorage.setItem(name, obj);
+                        },
+                        deleteProperty(t, n) {
+                            let obj = localStorage.getItem(name);
+                            let path = [...arg, n];
+                            if (path.length) {
+                                const sections = path;
+                                let temp = obj;
+                                for (let i = 0; i < sections.length - 1; i++) {
+                                    let section = sections[i];
+                                    temp = temp[section]
+                                }
+                                let lastSection = sections[sections.length - 1];
+                                delete temp[lastSection]
+                            } else {
+                                delete obj[n]
+                            }
+                            localStorage.setItem(name, obj);
+                            return true;
                         }
                     })
                     let target = value;
@@ -162,6 +195,10 @@ function FSON(storagePath) {
             localStorage.setItem(name, value);
             return true;
         },
+        deleteProperty(target, prop) {
+            localStorage.removeItem(prop);
+            return true;
+        }
     };
 
     return new Proxy({}, mainHandler);

@@ -107,12 +107,11 @@ assert.strictEqual(db.arr[0].id,2);
 
 //keys
 db.obj = {
-    one:'',
-    two:'',
-    three:'',
+    one:'the one',
+    two:'the two',
+    three:'the three',
 };
 assert.deepStrictEqual(Object.keys(db.obj), ['one', 'two', 'three']);
-
 
 db.obj.nested = {
     a:'',
@@ -120,5 +119,16 @@ db.obj.nested = {
     c:'',
 }
 assert.deepStrictEqual(Object.keys(db.obj.nested), ['a', 'b', 'c']);
+
+//delete
+db.obj = {};
+delete db.obj;
+assert.equal(typeof db.obj, 'undefined');
+
+db.obj = {
+    nested:{},
+};
+delete db.obj.nested;
+assert.equal(typeof db.obj.nested,'undefined')
 
 console.log('passed all tests!');

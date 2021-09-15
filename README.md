@@ -20,7 +20,8 @@ const Fson = require('fson-db');
 const dbPath = './config';
 
 //db is a js object! but any changes to in will be persistent!
-const db = Fson(dbPath); //dbPath is only required for Node.js
+//dbPath is only required for Node.js
+const db = Fson(dbPath); //db must be a constant!
 
 //save any type of literals
 db.name = 'john doe';
@@ -70,8 +71,43 @@ console.log(db.users.length); // 2
 //modify with indexes!
 db.users[1] = {id: 3}
 console.log(db.users[1].id); // 3
+```
+Loop through entries
+```javascript
+//list entries with Object.keys
+db.obj = {
+    one:'the_one',
+    two:'the_two',
+    three:'the_three',
+};
+console.log(Object.keys(db.obj)) // ['one', 'two', 'three']
+
+//loop through object keys
+for(const key of db.obj){
+    const value = db.obj[key];
+    // ...
+}
+
+for (const [key, value] of Object.entries(db.obj)) {
+    console.log(`${key}: ${value}`);
+}
 
 
+//the above example also works for nested objects
+```
+
+Delete Operator
+```javascript
+db.obj = {};
+delete db.obj;
+console.log(typeof db.obj) // 'undefined'
+
+//nested objects!
+db.obj = {
+    nested:{},
+};
+delete db.obj.nested;
+console.log(typeof db.obj.nested) // 'undefined'
 ```
 
 
