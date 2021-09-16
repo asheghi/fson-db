@@ -83,9 +83,9 @@ db.obj = {
 console.log(Object.keys(db.obj)) // ['one', 'two', 'three']
 
 //loop through object keys
-for(const key of db.obj){
+for(const key in db.obj){
     const value = db.obj[key];
-    // ...
+    console.log(`${key}: ${value}`);
 }
 
 for (const [key, value] of Object.entries(db.obj)) {
