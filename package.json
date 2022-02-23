@@ -1,6 +1,6 @@
 {
   "name": "fson-db",
-  "version": "1.3.2",
+  "version": "2.0.0",
   "description": "SUPER SIMPLE Database for javascript",
   "main": "dist/fson_db.cjs.js",
   "module": "dist/fson_db.esm.js",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "rimraf ./dist && rollup -c rollup.config.js",
-    "test": "node test/basics.js"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -31,9 +31,10 @@
   },
   "homepage": "https://github.com/semycolon/fson#readme",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^20.0.0",
+    "jest": "^27.5.1",
     "rimraf": "^3.0.2",
     "rollup": "^2.56.3",
-    "rollup-plugin-terser": "^7.0.2",
-    "@rollup/plugin-commonjs": "^20.0.0"
+    "rollup-plugin-terser": "^7.0.2"
   }
 }

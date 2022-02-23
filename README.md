@@ -1,13 +1,60 @@
-fson-db
-====
+## Data Persistence for **DUMMIES**
 
-Super Simple Database for Node.js and Browser
+it gives you a magical javascript object that persists changes even after restart, and you can watch for changes too!
 
-`fson-db` stores data with `json` format in localStorage for browsers and fs for node-js.
+both Node.js and Browser environment are supported.
 
-the following apis are supported, full js object apis support is in progress
+### Quick Guide:
 
-Example Usage:
+```javascript
+//get the magical object
+import Fson from 'fson-db';
+const starwars = Fson('./file/path');
+
+// save data
+starwars.owner = 'Disney';
+starwars.movies = [
+  {
+    title: 'A New Home',
+    date: new Date(1997, 5, 25),
+    directory: {
+      name: 'George Locas',
+    }
+  },
+  {
+    title: 'The Force Awakens',
+    date: new Date(2015, 12, 18),
+    directory: {
+      name: 'J.J. Abraham',
+    }
+  },
+]
+//read data just like regular js object
+const filtered = starwars.movies.filter(it => it.date.getUTCFullYear() > 2012);
+console.log(`${filtered.length} movies since ${starwars.owner}`)
+
+//watch for changes
+import {watch} from 'fson-db';
+watch(starwars,(field,newValue,oldValue) => {
+  if (field === 'owner') {
+    console.log(`${newValue} is the new boss here!`)
+  }
+  if (field === 'movies') {
+    console.log(`a new movie has been released!`)
+  }
+})
+```
+---
+
+### How does it work?
+`fson-db` load object from DataStorage, keep a copy of object in memory and apply effects to DataStorage.
+DataStorage saves data with `JSON` format in `LocalStorage` for Browsers and `FileSystem` for Node.JS.
+
+---
+
+the following apis are supported, full js object apis support is in progress.
+
+Full Example:
 
 ```javascript
 //browser
@@ -40,7 +87,7 @@ console.log(db.date) //  "1997-02-19T20:30:00.000Z"
 
 //save objects!
 db.object = {
-    foo: 'bar',
+  foo: 'bar',
 }
 
 //fetch objest and nested fields
@@ -72,24 +119,26 @@ console.log(db.users.length); // 2
 db.users[1] = {id: 3}
 console.log(db.users[1].id); // 3
 ```
+
 Loop through entries
+
 ```javascript
 //list entries with Object.keys
 db.obj = {
-    one:'the_one',
-    two:'the_two',
-    three:'the_three',
+  one: 'the_one',
+  two: 'the_two',
+  three: 'the_three',
 };
 console.log(Object.keys(db.obj)) // ['one', 'two', 'three']
 
 //loop through object keys
-for(const key in db.obj){
-    const value = db.obj[key];
-    console.log(`${key}: ${value}`);
+for (const key in db.obj) {
+  const value = db.obj[key];
+  console.log(`${key}: ${value}`);
 }
 
 for (const [key, value] of Object.entries(db.obj)) {
-    console.log(`${key}: ${value}`);
+  console.log(`${key}: ${value}`);
 }
 
 
@@ -97,6 +146,7 @@ for (const [key, value] of Object.entries(db.obj)) {
 ```
 
 Delete Operator
+
 ```javascript
 db.obj = {};
 delete db.obj;
@@ -104,11 +154,10 @@ console.log(typeof db.obj) // 'undefined'
 
 //nested objects!
 db.obj = {
-    nested:{},
+  nested: {},
 };
 delete db.obj.nested;
 console.log(typeof db.obj.nested) // 'undefined'
 ```
-
 
 Note: high performance is not a priority for now, everything is synchronous, so use `db` inside `async` functions
