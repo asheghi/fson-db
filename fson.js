@@ -197,7 +197,19 @@ function FSON(storagePath) {
         if (typeof before === 'object') {
           before = {...before};
         }
-        storage.setItem(name, value);
+        if (typeof value === 'object' && value) {
+          if (Array.isArray(value)) {
+            storage.setItem(name, [...value]);
+          }else if(Object.prototype.toString.call(value) === '[object Date]'){
+            storage.setItem(name, new Date(value.getTime()));
+          }
+          else{
+            storage.setItem(name, {...value});
+          }
+        }else{
+          storage.setItem(name, value);
+        }
+
         if (target[symbolWatch]) {
           target[symbolWatch].call(target, name, value,before);
         }
@@ -332,12 +344,10 @@ function isDateString(value) {
 }
 
 
-module.exports = FSON;
-
-module.exports.watch = function (obj, callback = () => {
-  console.log('default callback')
-}, options = {}) {
+FSON.watch = function (obj, callback = (fieldPath,newVal,oldVal) => {}, options = {}) {
   obj[symbolWatch] = callback
 };
+
+module.exports = FSON;
 
 
