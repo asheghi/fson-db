@@ -44,13 +44,18 @@ watch(starwars,(field,newValue,oldValue) => {
   }
 })
 ```
+
 ---
+
+#
 
 ### How does it work?
-`fson-db` load object from DataStorage, keep a copy of object in memory and apply effects to DataStorage.
-DataStorage saves data with `JSON` format in `LocalStorage` for Browsers and `FileSystem` for Node.JS.
+`fson-db` load object from **DataStorage**, keep a copy of object in memory and apply effects to DataStorage.
 
----
+**DataStorage** saves data with `JSON` format in `LocalStorage` for Browsers and `FileSystem` for Node.JS.
+
+
+#
 
 the following apis are supported, full js object apis support is in progress.
 
