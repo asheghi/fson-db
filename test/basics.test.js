@@ -4,7 +4,6 @@ const {join} = require('path');
 
 const assert = require('assert');
 describe('FSON Basic Features', function () {
-
   beforeEach(() => {
     let path = join(__dirname,'.test-data');
     if (fs.existsSync(path)) {
@@ -31,19 +30,18 @@ describe('FSON Basic Features', function () {
     db[field] = 'value';
 
     assert.strictEqual(db[field], 'value');
-  })
-  test('read literals from storage', () => {
-    const db = JSON_DB('.test-data/literals');
-    assert.strictEqual(db.name, 'john doe');
-    assert.strictEqual(db.age, 24);
-    assert.strictEqual(db.pi, 3.1415);
-    assert.strictEqual(db.isActive, true);
 
-    assert.strictEqual(2, db.int);
+    //read literals from storage
+    const anotherDB = JSON_DB('.test-data/literals');
+    assert.strictEqual(anotherDB.name, 'john doe');
+    assert.strictEqual(anotherDB.age, 24);
+    assert.strictEqual(anotherDB.pi, 3.1415);
+    assert.strictEqual(anotherDB.isActive, true);
 
-    const field = 'the_field';
-    db[field] = 'value';
-    assert.strictEqual(db[field], 'value');
+    assert.strictEqual(2, anotherDB.int);
+
+    anotherDB[field] = 'value';
+    assert.strictEqual(anotherDB[field], 'value');
   })
 
   test('date works fine!',()=>{
@@ -77,7 +75,7 @@ describe('FSON Basic Features', function () {
 
 
     db.null = null;
-    assert.strictEqual(db.null, null);
+    expect(db.null).toBeFalsy()
     db.obj2 = {
       null: null
     }
@@ -160,7 +158,7 @@ describe('FSON Basic Features', function () {
     const db = JSON_DB('.test-data/delete');
     db.obj = {};
     delete db.obj;
-    assert.equal(typeof db.obj, 'undefined');
+    expect(db.obj).toBeFalsy();
 
     //load from storage
     const db2 = JSON_DB('.test-data/delete');

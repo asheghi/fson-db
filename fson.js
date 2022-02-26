@@ -1,14 +1,28 @@
 const path = require("path");
 const fs = require("fs");
 const symbolWatch = Symbol.for('watch');
-
+const {debounce} = require('lodash')
+const _ = require("lodash");
 const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
 const isNode = typeof process !== 'undefined'
   && process.versions != null
   && process.versions.node != null;
 
-function FSON(storagePath) {
-  const storage = createLocalStorage(storagePath);
+function escapeReference(value) {
+  if (value && typeof value === 'object') {
+    if (Array.isArray(value)) {
+      return [...value]
+    } else if (Object.prototype.toString.call(value) === '[object Date]') {
+      return new Date(value.getTime());
+    } else {
+      return {...value};
+    }
+  }
+  return value;
+}
+
+function FSON(storagePath, options = {}) {
+  const storage = createStorage(storagePath, options);
   const dbTarget = {};
   const mainHandler = {
     ownKeys: function () {
@@ -109,7 +123,7 @@ function FSON(storagePath) {
                       if (typeof before === 'object') before = {...before};
                       const newTemp = {...temp};
                       afterSaveNested = function () {
-                        newTemp[symbolWatch].call(newTemp,path.slice(i).join('.'),v,before)
+                        newTemp[symbolWatch].call(newTemp, path.slice(i).join('.'), v, before)
                       };
                     }
 
@@ -122,7 +136,7 @@ function FSON(storagePath) {
                   if (target[symbolWatch]) {
                     let before = temp[lastSection];
                     if (typeof before === 'object') before = {...before};
-                    afterSave = () => target[symbolWatch].call(target,[name,...path].join('.'),v,before)
+                    afterSave = () => target[symbolWatch].call(target, [name, ...path].join('.'), v, before)
                   }
 
                   temp[lastSection] = v;
@@ -131,7 +145,7 @@ function FSON(storagePath) {
                   if (target[symbolWatch]) {
                     let before = obj[n];
                     if (typeof before === 'object') before = {...before};
-                    afterSave = () => target[symbolWatch].call(target,[name,...path].join('.'),v,before)
+                    afterSave = () => target[symbolWatch].call(target, [name, ...path].join('.'), v, before)
                   }
 
 
@@ -139,8 +153,8 @@ function FSON(storagePath) {
                 }
 
                 storage.setItem(name, obj);
-                if(afterSave) afterSave();
-                if(afterSaveNested) afterSaveNested();
+                if (afterSave) afterSave();
+                if (afterSaveNested) afterSaveNested();
                 if (t[symbolWatch]) {
                   t[symbolWatch].call(t, n, v)
                 }
@@ -192,26 +206,13 @@ function FSON(storagePath) {
         target[symbolWatch] = value;
         return true;
       }
+
       try {
-        let before = storage.getItem(name);
-        if (typeof before === 'object') {
-          before = {...before};
-        }
-        if (typeof value === 'object' && value) {
-          if (Array.isArray(value)) {
-            storage.setItem(name, [...value]);
-          }else if(Object.prototype.toString.call(value) === '[object Date]'){
-            storage.setItem(name, new Date(value.getTime()));
-          }
-          else{
-            storage.setItem(name, {...value});
-          }
-        }else{
-          storage.setItem(name, value);
-        }
+        let before = escapeReference(storage.getItem(name));
+        storage.setItem(name, escapeReference(value))
 
         if (target[symbolWatch]) {
-          target[symbolWatch].call(target, name, value,before);
+          target[symbolWatch].call(target, name, value, before);
         }
       } catch (e) {
         console.error(e);
@@ -280,10 +281,46 @@ function createBrowserStorage() {
   };
 }
 
-function createNodeStorage(storagePath) {
+const pendingWrite = {};
+const cache = {};
+
+function createNodeStorage(storagePath, opt) {
   const fs = require('fs');
   const path = require('path');
   storagePath = path.resolve(storagePath);
+
+  const maxWait = opt.maxWaitWrite || 5000;
+  const invalidateCache = opt.invalidateCache ? +opt.invalidateCache : false;
+
+  function storageWriteSync(name) {
+    if (!pendingWrite[name]) return;
+    const jsonPath = path.join(storagePath, name);
+    let content = JSON.stringify(cache[name]) || '';
+    fs.writeFileSync(jsonPath, content, () => {
+    });
+    pendingWrite[name] = false;
+  }
+
+  let pendingWriteNames = Object.keys(pendingWrite).filter(key => pendingWrite[key]);
+  if (pendingWriteNames) {
+    for (const name of pendingWriteNames) {
+      storageWriteSync(name);
+    }
+  }
+
+  const debouncedStorageWrite = debounce(function (name) {
+    if (pendingWrite[name]) storageWriteSync(name);
+  }, maxWait, {
+    // leading:true,
+    // trailing:true,
+    maxWait,
+  })
+
+  const storageWriteAsync = function (name) {
+    debouncedStorageWrite(name);
+  };
+
+  //create directory if not exists
   try {
     fs.statSync(path.resolve(storagePath));
   } catch (e) {
@@ -293,10 +330,12 @@ function createNodeStorage(storagePath) {
       throw new Error('Bad Argument: path does not exists! check:' + storagePath);
     }
   }
-  const cache = {};
+
   return {
     getItem(name) {
       if (cache[name]) return cache[name];
+      //apply pending changes to prevent inconsistency
+      // if (pendingWrite[name]) storageWriteSync(name);
       const jsonPath = path.join(storagePath, name);
       try {
         const string = fs.readFileSync(jsonPath, {encoding: 'utf8'});
@@ -304,22 +343,34 @@ function createNodeStorage(storagePath) {
         cache[name] = value;
         return value;
       } catch (e) {
-        return undefined;
+        // console.error(e);
       }
+      return undefined;
     },
     setItem(name, value) {
       cache[name] = value;
-      const jsonPath = path.join(storagePath, name);
-      fs.writeFileSync(jsonPath, JSON.stringify(value));
+      pendingWrite[name] = true;
+      setTimeout(() => {
+        storageWriteAsync(name);
+        if (invalidateCache) {
+          setTimeout(() => {
+            storageWriteSync(name);
+            delete cache[name]
+          }, invalidateCache);
+        }
+      })
     },
     keys() {
-      return fs.readdirSync(storagePath)
+      let one = fs.readdirSync(storagePath);
+      let two = Object.keys(escapeReference(cache));
+      return _.union(two, one,)
     },
     removeItem(name) {
       delete cache[name];
       const jsonPath = path.join(storagePath, name);
       try {
-        fs.unlinkSync(jsonPath);
+        fs.unlink(jsonPath, () => {
+        });
       } catch (e) {
         console.error(e);
       }
@@ -327,9 +378,9 @@ function createNodeStorage(storagePath) {
   };
 }
 
-function createLocalStorage(storagePath) {
+function createStorage(storagePath, options) {
   if (isBrowser) return createBrowserStorage()
-  else if (isNode) return createNodeStorage(storagePath);
+  else if (isNode) return createNodeStorage(storagePath, options);
   else throw new Error('unsupported environment');
 }
 
@@ -344,9 +395,12 @@ function isDateString(value) {
 }
 
 
-FSON.watch = function (obj, callback = (fieldPath,newVal,oldVal) => {}, options = {}) {
+FSON.watch = function (obj, callback = (fieldPath, newVal, oldVal) => {
+}, options = {}) {
   obj[symbolWatch] = callback
 };
+
+FSON.cache = cache;
 
 module.exports = FSON;
 

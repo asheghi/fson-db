@@ -36,5 +36,8 @@
     "rimraf": "^3.0.2",
     "rollup": "^2.56.3",
     "rollup-plugin-terser": "^7.0.2"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
   }
 }
