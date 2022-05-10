@@ -1,6 +1,6 @@
 {
   "name": "fson-db",
-  "version": "2.0.4",
+  "version": "2.1.0",
   "description": "Data Persistence for DUMMIES",
   "main": "dist/fson_db.cjs.js",
   "module": "dist/fson_db.esm.js",
