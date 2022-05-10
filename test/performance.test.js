@@ -17,7 +17,9 @@ describe("Performance Test", () => {
 
   test('worse case scenario, writing and reading on 10_000 different keys!', async () => {
     let storagePath = join(baseDir,'.test-data','perf-1');
-    const db = JSON_DB(storagePath);
+    const db = JSON_DB(storagePath,{maxWaitWrite:5000});
+    const db2 = JSON_DB(storagePath);
+
     const start = new Date().getTime();
     db['item-0'] = 1;
     let count = 10_000;
@@ -26,7 +28,6 @@ describe("Performance Test", () => {
       db['item-' + i] = db['item-' + (i - 1)] + 1;
     }
 
-    const db2 = JSON_DB(storagePath);
     expect(Object.keys(db).length).toBe(count);
     expect(Object.keys(db2).length).toBe(count);
     expect(db['item-' + (count - 1)]).toBe(count )
@@ -36,7 +37,7 @@ describe("Performance Test", () => {
   })
 
   test('performance test', async () => {
-    const db = JSON_DB(join(baseDir,'.test-data2'));
+    const db = JSON_DB(join(baseDir,'.test-data2'),{maxWaitWrite:5000});
     const start = new Date().getTime();
     db.nested = {['item-0'] : 1};
     let count = 10_000;

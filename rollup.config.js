@@ -21,6 +21,6 @@ function generateConfig(format, minify) {
 module.exports = [
     generateConfig('umd', true),
     generateConfig('umd', false),
-    generateConfig('cjs', true),
+    generateConfig('cjs', false),
     generateConfig('esm', true),
 ];

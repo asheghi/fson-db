@@ -163,6 +163,7 @@ describe('FSON Basic Features', function () {
     //load from storage
     const db2 = JSON_DB('.test-data/delete');
     assert.equal(typeof db2.obj, 'undefined');
+    expect(db2.obj).toBeFalsy();
 
     db.obj = {
       nested: {},

@@ -1,6 +1,6 @@
 {
   "name": "fson-db",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Data Persistence for DUMMIES",
   "main": "dist/fson_db.cjs.js",
   "module": "dist/fson_db.esm.js",
@@ -27,9 +27,9 @@
   "author": "Seyyed Abol Hassan Asheghi",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/semycolon/fson/issues"
+    "url": "https://github.com/asheghi/fson-db/issues"
   },
-  "homepage": "https://github.com/semycolon/fson#readme",
+  "homepage": "https://github.com/asheghi/fson-db#readme",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^20.0.0",
     "jest": "^27.5.1",
@@ -38,6 +38,7 @@
     "rollup-plugin-terser": "^7.0.2"
   },
   "dependencies": {
+    "debug": "^4.3.4",
     "lodash": "^4.17.21"
   }
 }

@@ -1,9 +1,9 @@
-const path = require("path");
-const fs = require("fs");
 const symbolWatch = Symbol.for('watch');
+const symbolStorage = Symbol.for('storage');
 const {debounce} = require('lodash')
 const _ = require("lodash");
 const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+const d = require('debug')('fson')
 const isNode = typeof process !== 'undefined'
   && process.versions != null
   && process.versions.node != null;
@@ -22,6 +22,8 @@ function escapeReference(value) {
 }
 
 function FSON(storagePath, options = {}) {
+  const d = require('debug')('fson-' + storagePath);
+  d('creating new fson object', storagePath, options);
   const storage = createStorage(storagePath, options);
   const dbTarget = {};
   const mainHandler = {
@@ -32,6 +34,10 @@ function FSON(storagePath, options = {}) {
       return {configurable: true, enumerable: true, value: null};
     },
     get(target, name, receiver) {
+      d('main getting', name);
+      if (typeof name === 'symbol'){
+        return target[name];
+      }
       try {
         let value = storage.getItem(name);
         /*if (Array.isArray(value)){
@@ -200,11 +206,16 @@ function FSON(storagePath, options = {}) {
       }
     },
     set(target, name, value, receiver) {
-      //ignore set watcher call to storage
-      // don't save to storage
-      if (name === symbolWatch) {
-        target[symbolWatch] = value;
-        return true;
+      d('main setting', name, value);
+      if (typeof name === 'symbol') {
+        d('set: ignoring ',name,value);
+        target[name] = value;
+        return;
+      };
+
+      if (typeof value === 'function') {
+        target[name] = value.bind(target);
+        return;
       }
 
       try {
@@ -220,6 +231,7 @@ function FSON(storagePath, options = {}) {
       return true;
     },
     deleteProperty(target, prop) {
+      d('deleting ', prop);
       try {
         storage.removeItem(prop);
       } catch (e) {
@@ -229,7 +241,9 @@ function FSON(storagePath, options = {}) {
     }
   };
 
-  return new Proxy(dbTarget, mainHandler);
+  let proxy = new Proxy(dbTarget, mainHandler);
+  proxy[symbolStorage] = storage;
+  return proxy;
 };
 
 function getNested(obj, pathArray) {
@@ -250,8 +264,12 @@ function getNested(obj, pathArray) {
 }
 
 function createBrowserStorage() {
+  d('creating browser storage')
   const cache = {}
   return {
+    flush(){
+      // does nothing
+    },
     getItem(name) {
       if (cache[name]) return cache[name];
       try {
@@ -281,31 +299,38 @@ function createBrowserStorage() {
   };
 }
 
-const pendingWrite = {};
-const cache = {};
-
 function createNodeStorage(storagePath, opt) {
+  const d = require('debug')('fson-node-storage');
+  d('creating node storage')
   const fs = require('fs');
   const path = require('path');
-  storagePath = path.resolve(storagePath);
+  const pendingWrite = {};
+  const cache = {};
 
-  const maxWait = opt.maxWaitWrite || 5000;
+  storagePath = path.resolve(storagePath);
+  d('resolved path', storagePath);
+
+  const maxWait = opt.maxWaitWrite || 0;
   const invalidateCache = opt.invalidateCache ? +opt.invalidateCache : false;
 
+  function checkInvalidation(name) {
+    if (invalidateCache) {
+      setTimeout(() => {
+        storageWriteSync(name);
+        delete cache[name]
+      }, invalidateCache);
+    }
+  }
+
   function storageWriteSync(name) {
+    d('write sync called for', name);
     if (!pendingWrite[name]) return;
     const jsonPath = path.join(storagePath, name);
     let content = JSON.stringify(cache[name]) || '';
-    fs.writeFileSync(jsonPath, content, () => {
-    });
+    d('write sync writing', name, jsonPath, content);
+    fs.writeFileSync(jsonPath, content);
     pendingWrite[name] = false;
-  }
-
-  let pendingWriteNames = Object.keys(pendingWrite).filter(key => pendingWrite[key]);
-  if (pendingWriteNames) {
-    for (const name of pendingWriteNames) {
-      storageWriteSync(name);
-    }
+    d('write sync finished', name)
   }
 
   const debouncedStorageWrite = debounce(function (name) {
@@ -321,47 +346,61 @@ function createNodeStorage(storagePath, opt) {
   };
 
   //create directory if not exists
-  try {
-    fs.statSync(path.resolve(storagePath));
-  } catch (e) {
-    try {
-      fs.mkdirSync(path.resolve(storagePath), {recursive: true})
-    } catch (ignored) {
-      throw new Error('Bad Argument: path does not exists! check:' + storagePath);
+  if (!fs.existsSync(storagePath)) {
+    d('making directory', storagePath);
+    fs.mkdirSync(path.resolve(storagePath), {recursive: true})
+  }
+
+  const cleanUp = (reason) => () => {
+    d('clean up called for', reason)
+    let pendingWriteNames = Object.keys(pendingWrite).filter(key => pendingWrite[key]);
+    if (pendingWriteNames) {
+      for (const name of pendingWriteNames) {
+        storageWriteSync(name);
+      }
     }
   }
 
+  process.addListener('exit', cleanUp('exit'))
+  process.addListener('SIGINT', cleanUp('SIGINT'))
+  process.addListener('SIGUSR1', cleanUp('sig1'))
+  process.addListener('SIGUSR2', cleanUp('sig2'))
+  process.addListener('uncaughtException', cleanUp('uncaughtException'))
+
   return {
+    flush(){
+      d('flush called')
+      cleanUp('flush')();
+    },
+    cache,
     getItem(name) {
       if (cache[name]) return cache[name];
       //apply pending changes to prevent inconsistency
       // if (pendingWrite[name]) storageWriteSync(name);
       const jsonPath = path.join(storagePath, name);
       try {
+        if (!fs.existsSync(jsonPath)) return undefined;
         const string = fs.readFileSync(jsonPath, {encoding: 'utf8'});
         let value = JSON.parse(string);
         cache[name] = value;
         return value;
       } catch (e) {
-        // console.error(e);
+        console.error(e);
       }
       return undefined;
     },
     setItem(name, value) {
       cache[name] = value;
       pendingWrite[name] = true;
+      checkInvalidation(name);
       setTimeout(() => {
         storageWriteAsync(name);
-        if (invalidateCache) {
-          setTimeout(() => {
-            storageWriteSync(name);
-            delete cache[name]
-          }, invalidateCache);
-        }
       })
     },
     keys() {
-      let one = fs.readdirSync(storagePath);
+      d('keys called()', storagePath)
+      //in case of double instance on the same path ->  cleanUp('getting keys');
+      let one = fs.existsSync(storagePath) ? fs.readdirSync(storagePath)  : [];
       let two = Object.keys(escapeReference(cache));
       return _.union(two, one,)
     },
@@ -369,8 +408,7 @@ function createNodeStorage(storagePath, opt) {
       delete cache[name];
       const jsonPath = path.join(storagePath, name);
       try {
-        fs.unlink(jsonPath, () => {
-        });
+        fs.unlinkSync(jsonPath);
       } catch (e) {
         console.error(e);
       }
@@ -395,13 +433,22 @@ function isDateString(value) {
 }
 
 
-FSON.watch = function (obj, callback = (fieldPath, newVal, oldVal) => {
+
+//todo add a mechanism to define a default config
+const instances = {};
+
+function FsonFactory(storagePath, options) {
+  const key = storagePath /*+ JSON.stringify(options)*/;
+  if (!instances[key]) {
+    instances[key] = FSON(storagePath, options);
+  }
+  return instances[key]
+}
+
+FsonFactory.watch = function (obj, callback = (fieldPath, newVal, oldVal) => {
 }, options = {}) {
   obj[symbolWatch] = callback
 };
 
-FSON.cache = cache;
 
-module.exports = FSON;
-
-
+module.exports = FsonFactory;
